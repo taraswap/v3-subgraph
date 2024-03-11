@@ -23,12 +23,15 @@ function getPosition(event: ethereum.Event, tokenId: BigInt): Position | null {
     // (e.g. 0xf7867fa19aa65298fadb8d4f72d0daed5e836f3ba01f0b9b9631cdc6c36bed40)
     if (!positionCall.reverted) {
       let positionResult = positionCall.value
-      let poolAddress = factoryContract.getPool(positionResult.value2, positionResult.value3, positionResult.value4)
+      let poolAddress = factoryContract.try_getPool(positionResult.value2, positionResult.value3, positionResult.value4)
+      if (poolAddress.reverted) {
+        return null
+      }
 
       position = new Position(tokenId.toString())
       // The owner gets correctly updated in the Transfer handler
       position.owner = Address.fromString(ADDRESS_ZERO)
-      position.pool = poolAddress.toHexString()
+      position.pool = poolAddress.value.toHexString()
       position.token0 = positionResult.value2.toHexString()
       position.token1 = positionResult.value3.toHexString()
       position.tickLower = position.pool.concat('#').concat(positionResult.value5.toString())
@@ -98,7 +101,13 @@ export function handleIncreaseLiquidity(event: IncreaseLiquidity): void {
   }
 
   let token0 = Token.load(position.token0)
+  if (token0 == null) {
+    return
+  }
   let token1 = Token.load(position.token1)
+  if (token1 == null) {
+    return
+  }
 
   let amount0 = convertTokenToDecimal(event.params.amount0, token0.decimals)
   let amount1 = convertTokenToDecimal(event.params.amount1, token1.decimals)
@@ -133,7 +142,13 @@ export function handleDecreaseLiquidity(event: DecreaseLiquidity): void {
   }
 
   let token0 = Token.load(position.token0)
+  if (token0 == null) {
+    return
+  }
   let token1 = Token.load(position.token1)
+  if (token1 == null) {
+    return
+  }
   let amount0 = convertTokenToDecimal(event.params.amount0, token0.decimals)
   let amount1 = convertTokenToDecimal(event.params.amount1, token1.decimals)
 
@@ -157,6 +172,9 @@ export function handleCollect(event: Collect): void {
   }
 
   let token0 = Token.load(position.token0)
+  if (token0 == null) {
+    return
+  }
   let amount0 = convertTokenToDecimal(event.params.amount0, token0.decimals)
   position.collectedFeesToken0 = position.collectedFeesToken0.plus(amount0)
   position.collectedFeesToken1 = position.collectedFeesToken1.plus(amount0)
