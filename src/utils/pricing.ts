@@ -4,8 +4,8 @@ import { Bundle, Pool, Token } from './../types/schema'
 import { BigDecimal, BigInt } from '@graphprotocol/graph-ts'
 import { exponentToBigDecimal, safeDiv } from '../utils/index'
 
-const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-const USDC_WETH_03_POOL = '0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8'
+const WETH_ADDRESS = '0x5745CC77c362D459b78bC014d8940c2c98E08c54'
+const USDC_WETH_03_POOL = '0x6f6e59d10570ef8491fd9b5fe804c61fbc285ca6'
 
 // token where amounts should contribute to tracked volume and liquidity
 // usually tokens that many tokens are paired with s
@@ -30,7 +30,9 @@ export let WHITELIST_TOKENS: string[] = [
   '0x956f47f50a910163d8bf957cf5846d573e7f87ca', // FEI
   '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0', // MATIC
   '0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9', // AAVE
-  '0xfe2e637202056d30016725477c5da089ab0a043a' // sETH2
+  '0xfe2e637202056d30016725477c5da089ab0a043a', // sETH2
+  '0x0a66473ff369d43f1c63832f7bb2fd887ed16844', // USDT Testnet
+  '0x3F48CB103C3172C24a9F6cF3be92d571bF7072af' // LARA
 ]
 
 let STABLE_COINS: string[] = [
@@ -39,7 +41,8 @@ let STABLE_COINS: string[] = [
   '0xdac17f958d2ee523a2206206994597c13d831ec7',
   '0x0000000000085d4780b73119b644ae5ecd22b376',
   '0x956f47f50a910163d8bf957cf5846d573e7f87ca',
-  '0x4dd28568d05f09b02220b09c2cb307bfd837cb95'
+  '0x4dd28568d05f09b02220b09c2cb307bfd837cb95',
+  '0x0a66473ff369d43f1c63832f7bb2fd887ed16844'
 ]
 
 let MINIMUM_ETH_LOCKED = BigDecimal.fromString('60')

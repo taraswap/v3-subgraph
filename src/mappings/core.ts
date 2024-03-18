@@ -28,7 +28,7 @@ export function handleInitialize(event: Initialize): void {
   pool.sqrtPrice = event.params.sqrtPriceX96
   pool.tick = BigInt.fromI32(event.params.tick)
   pool.save()
-  
+
   // update token prices
   let token0 = Token.load(pool.token0)
   let token1 = Token.load(pool.token1)
