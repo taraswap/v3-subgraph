@@ -6,7 +6,7 @@ schema:
 dataSources:
   - kind: ethereum/contract
     name: Factory
-    network: taraxa-testnet
+    network: testnet
     source:
       address: '0x33E5AF40C406e4d26440119E701324618919B7A4'
       abi: Factory
@@ -35,7 +35,7 @@ dataSources:
           handler: handlePoolCreated
   - kind: ethereum/contract
     name: NonfungiblePositionManager
-    network: taraxa-testnet
+    network: testnet
     source:
       address: '0x39fa4A1d37D6e5d0BC3caA0D26357bd03563bDCd'
       abi: NonfungiblePositionManager
@@ -69,7 +69,7 @@ dataSources:
 templates:
   - kind: ethereum/contract
     name: Pool
-    network: taraxa-testnet
+    network: testnet
     source:
       abi: Pool
     mapping:
