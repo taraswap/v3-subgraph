@@ -19,7 +19,7 @@ services:
       postgres_pass: let-me-in
       postgres_db: graph-node
       ipfs: "ipfs:5001"
-      ethereum: "taraxa:https://rpc.testnet.taraxa.io"
+      ethereum: "mainnet:https://rpc.mainnet.taraxa.io"
       GRAPH_ALLOW_NON_DETERMINISTIC_IPFS: 1
       GRAPH_ALLOW_NON_DETERMINISTIC_FULLTEXT_SEARCH: 1
       GRAPH_LOG: info

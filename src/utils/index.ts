@@ -1,5 +1,5 @@
 /* eslint-disable prefer-const */
-import { BigInt, BigDecimal, ethereum } from '@graphprotocol/graph-ts'
+import { BigInt, BigDecimal, ethereum, log } from '@graphprotocol/graph-ts'
 import { Transaction } from '../types/schema'
 import { ONE_BI, ZERO_BI, ZERO_BD, ONE_BD } from '../utils/constants'
 
@@ -77,7 +77,7 @@ export function convertTokenToDecimal(tokenAmount: BigInt, exchangeDecimals: Big
 }
 
 export function convertEthToDecimal(eth: BigInt): BigDecimal {
-  return eth.toBigDecimal().div(exponentToBigDecimal(18))
+  return eth.toBigDecimal().div(exponentToBigDecimal(BigInt.fromI32(18)))
 }
 
 export function loadTransaction(event: ethereum.Event): Transaction {
@@ -87,7 +87,6 @@ export function loadTransaction(event: ethereum.Event): Transaction {
   }
   transaction.blockNumber = event.block.number
   transaction.timestamp = event.block.timestamp
-  transaction.gasUsed = event.transaction.gasUsed
   transaction.gasPrice = event.transaction.gasPrice
   transaction.save()
   return transaction as Transaction

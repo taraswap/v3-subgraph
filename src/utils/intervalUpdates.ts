@@ -22,6 +22,9 @@ import { ethereum } from '@graphprotocol/graph-ts'
  */
 export function updateUniswapDayData(event: ethereum.Event): UniswapDayData {
   let uniswap = Factory.load(FACTORY_ADDRESS)
+  if (uniswap == null) {
+    throw new Error('No uniswap')
+  }
   let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400 // rounded
   let dayStartTimestamp = dayID * 86400
@@ -49,6 +52,9 @@ export function updatePoolDayData(event: ethereum.Event): PoolDayData {
     .concat('-')
     .concat(dayID.toString())
   let pool = Pool.load(event.address.toHexString())
+  if (pool == null) {
+    throw new Error('No pool available')
+  }
   let poolDayData = PoolDayData.load(dayPoolID)
   if (poolDayData === null) {
     poolDayData = new PoolDayData(dayPoolID)
@@ -98,6 +104,9 @@ export function updatePoolHourData(event: ethereum.Event): PoolHourData {
     .concat('-')
     .concat(hourIndex.toString())
   let pool = Pool.load(event.address.toHexString())
+  if (pool == null) {
+    throw new Error('No pool available')
+  }
   let poolHourData = PoolHourData.load(hourPoolID)
   if (poolHourData === null) {
     poolHourData = new PoolHourData(hourPoolID)
@@ -142,6 +151,9 @@ export function updatePoolHourData(event: ethereum.Event): PoolHourData {
 
 export function updateTokenDayData(token: Token, event: ethereum.Event): TokenDayData {
   let bundle = Bundle.load('1')
+  if (bundle == null) {
+    throw new Error('No bundle available')
+  }
   let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400
   let dayStartTimestamp = dayID * 86400
@@ -185,6 +197,9 @@ export function updateTokenDayData(token: Token, event: ethereum.Event): TokenDa
 
 export function updateTokenHourData(token: Token, event: ethereum.Event): TokenHourData {
   let bundle = Bundle.load('1')
+  if (bundle == null) {
+    throw new Error('No bundle available')
+  }
   let timestamp = event.block.timestamp.toI32()
   let hourIndex = timestamp / 3600 // get unique hour within unix history
   let hourStartUnix = hourIndex * 3600 // want the rounded effect

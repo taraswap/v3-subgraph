@@ -1,11 +1,11 @@
 /* eslint-disable prefer-const */
 import { ONE_BD, ZERO_BD, ZERO_BI } from './constants'
 import { Bundle, Pool, Token } from './../types/schema'
-import { BigDecimal, BigInt } from '@graphprotocol/graph-ts'
+import { BigDecimal, BigInt, log } from '@graphprotocol/graph-ts'
 import { exponentToBigDecimal, safeDiv } from '../utils/index'
 
-const WETH_ADDRESS = '0xCd89dB7E3E32D8D273532814c9c94868db6A8642'
-const USDC_WETH_03_POOL = '0x2639ecdd981e6eb0d06d86cee7e738ef44707d89'
+const WETH_ADDRESS = '0x5d0fa4c5668e5809c83c95a7cef3a9dd7c68d4fe'
+const USDC_WETH_03_POOL = '0xff53857acbde719b243d07be0c5e15ae1983808c'
 
 // token where amounts should contribute to tracked volume and liquidity
 // usually tokens that many tokens are paired with s
@@ -47,14 +47,17 @@ let STABLE_COINS: string[] = [
 
 let MINIMUM_ETH_LOCKED = BigDecimal.fromString('60')
 
-let Q192 = 2 ** 192
+let Q192 = BigInt.fromI32(2)
+  .pow(192)
+  .toBigDecimal()
 export function sqrtPriceX96ToTokenPrices(sqrtPriceX96: BigInt, token0: Token, token1: Token): BigDecimal[] {
   let num = sqrtPriceX96.times(sqrtPriceX96).toBigDecimal()
   let denom = BigDecimal.fromString(Q192.toString())
+
   let price1 = num
     .div(denom)
     .times(exponentToBigDecimal(token0.decimals))
-    .div(exponentToBigDecimal(token1.decimals))
+    .div(exponentToBigDecimal(token1.decimals || BigInt.fromI32(18)))
 
   let price0 = safeDiv(BigDecimal.fromString('1'), price1)
   return [price0, price1]
@@ -85,6 +88,9 @@ export function findEthPerToken(token: Token): BigDecimal {
   let priceSoFar = ZERO_BD
   let bundle = Bundle.load('1')
 
+  if (bundle == null) {
+    return ONE_BD
+  }
   // hardcoded fix for incorrect rates
   // if whitelist includes token - get the safe price
   if (STABLE_COINS.includes(token.id)) {
@@ -94,10 +100,18 @@ export function findEthPerToken(token: Token): BigDecimal {
       let poolAddress = whiteList[i]
       let pool = Pool.load(poolAddress)
 
+      if (pool == null) {
+        return ONE_BD
+      }
+
       if (pool.liquidity.gt(ZERO_BI)) {
         if (pool.token0 == token.id) {
           // whitelist token is token1
           let token1 = Token.load(pool.token1)
+
+          if (token1 == null) {
+            return ONE_BD
+          }
           // get the derived ETH in pool
           let ethLocked = pool.totalValueLockedToken1.times(token1.derivedETH)
           if (ethLocked.gt(largestLiquidityETH) && ethLocked.gt(MINIMUM_ETH_LOCKED)) {
@@ -108,6 +122,10 @@ export function findEthPerToken(token: Token): BigDecimal {
         }
         if (pool.token1 == token.id) {
           let token0 = Token.load(pool.token0)
+
+          if (token0 == null) {
+            return ONE_BD
+          }
           // get the derived ETH in pool
           let ethLocked = pool.totalValueLockedToken0.times(token0.derivedETH)
           if (ethLocked.gt(largestLiquidityETH) && ethLocked.gt(MINIMUM_ETH_LOCKED)) {
@@ -135,6 +153,10 @@ export function getTrackedAmountUSD(
   token1: Token
 ): BigDecimal {
   let bundle = Bundle.load('1')
+
+  if (bundle == null) {
+    return ONE_BD
+  }
   let price0USD = token0.derivedETH.times(bundle.ethPriceUSD)
   let price1USD = token1.derivedETH.times(bundle.ethPriceUSD)
 

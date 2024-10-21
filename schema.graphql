@@ -141,6 +141,7 @@ type Pool @entity {
   swaps: [Swap!]! @derivedFrom(field: "pool")
   collects: [Collect!]! @derivedFrom(field: "pool")
   ticks: [Tick!]! @derivedFrom(field: "pool")
+  incentives: [Incentive!]! @derivedFrom(field: "pool")
 }
 
 type Tick @entity {
@@ -193,8 +194,10 @@ type Position @entity {
   # Positions created through NonfungiblePositionManager
   # NFT token id
   id: ID!
+  # minted of the NFT -> the initial depositor of the LP funds
+  minter: YieldFarmer!
   # owner of the NFT
-  owner: Bytes!
+  owner: YieldFarmer!
   # pool position is within
   pool: Pool!
   # allow indexing by tokens
@@ -230,7 +233,7 @@ type PositionSnapshot @entity {
   # <NFT token id>#<block number>
   id: ID!
   # owner of the NFT
-  owner: Bytes!
+  owner: YieldFarmer!
   # pool the position is within
   pool: Pool!
   # position of which the snap was taken of
@@ -267,8 +270,6 @@ type Transaction @entity {
   blockNumber: BigInt!
   # timestamp txn was confirmed
   timestamp: BigInt!
-  # gas used during txn execution
-  gasUsed: BigInt!
   gasPrice: BigInt!
   # derived values
   mints: [Mint]! @derivedFrom(field: "transaction")
@@ -650,4 +651,79 @@ type TokenHourData @entity {
   low: BigDecimal!
   # close price USD
   close: BigDecimal!
+}
+
+# ------------------------------
+# UniV3Staker definitions
+# ------------------------------
+
+type YieldFarmer @entity {
+  # The address of the farmer
+  id: ID!
+  mints: [Position!]! @derivedFrom(field: "minter")
+  positions: [Position!]! @derivedFrom(field: "owner")
+  stakes: [Stake!]! @derivedFrom(field: "farmer")
+  unstakes: [Unstake!]! @derivedFrom(field: "farmer")
+  claims: [Claim!]! @derivedFrom(field: "farmer")
+}
+
+type Incentive @entity {
+  id: ID!
+  contract: Bytes!
+  rewardToken: ERC20Token!
+  pool: Pool!
+  startTime: BigInt!
+  endTime: BigInt!
+  vestingPeriod: BigInt!
+  refundee: Bytes!
+  reward: BigInt!
+  ended: Boolean!
+}
+
+type IncentivePosition @entity {
+  id: ID!
+  position: Position!
+  incentive: Incentive!
+  claimed: BigInt!
+}
+
+type Stake @entity {
+  id: ID!
+  txHash: Bytes!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  position: Position!
+  farmer: YieldFarmer!
+  rewardToken: ERC20Token!
+}
+
+type Unstake @entity {
+  id: ID!
+  txHash: Bytes!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  position: Position!
+  farmer: YieldFarmer!
+  rewardToken: ERC20Token!
+}
+
+type Claim @entity {
+  id: ID!
+  txHash: Bytes!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  amount: BigInt!
+  farmer: YieldFarmer!
+  rewardToken: ERC20Token!
+}
+
+type ERC20Token @entity {
+  id: ID!
+  name: String!
+  symbol: String!
+  decimals: Int!
+  incentives: [Incentive]! @derivedFrom(field: "rewardToken")
+  unstakes: [Unstake]! @derivedFrom(field: "rewardToken")
+  claims: [Claim]! @derivedFrom(field: "rewardToken")
+  stakes: [Stake]! @derivedFrom(field: "rewardToken")
 }
