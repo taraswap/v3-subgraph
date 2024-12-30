@@ -5,7 +5,7 @@ import { BigDecimal, BigInt, log } from '@graphprotocol/graph-ts'
 import { exponentToBigDecimal, safeDiv } from '../utils/index'
 
 const WTARA_ADDRESS = '0x5d0fa4c5668e5809c83c95a7cef3a9dd7c68d4fe'
-const USDM_TARA_05_POOL = '0x2d8bD8Ae0060192547d60a4B148a372Bd7851825'
+const USDM_TARA_05_POOL = '0x66c4c7a91f9c42259c52a415ebba9866bbb4179a'
 
 // token where amounts should contribute to tracked volume and liquidity
 // usually tokens that many tokens are paired with s
