@@ -1,28 +1,28 @@
 /* eslint-disable prefer-const */
 import { ONE_BD, ZERO_BD, ZERO_BI } from './constants'
 import { Bundle, Pool, Token } from './../types/schema'
-import { BigDecimal, BigInt, log } from '@graphprotocol/graph-ts'
+import { BigDecimal, BigInt } from '@graphprotocol/graph-ts'
 import { exponentToBigDecimal, safeDiv } from '../utils/index'
 
 const WTARA_ADDRESS = '0x5d0fa4c5668e5809c83c95a7cef3a9dd7c68d4fe'
-const USDM_TARA_05_POOL = '0x66c4c7a91f9c42259c52a415ebba9866bbb4179a'
+const TARA_USDT_03_POOL = '0x2cc019f1fcd2b65f14c547f432ae93d4b7c682a4'
 
 // token where amounts should contribute to tracked volume and liquidity
 // usually tokens that many tokens are paired with s
 export let WHITELIST_TOKENS: string[] = [
   WTARA_ADDRESS, // WETH
-  '0x81d87E0a53EAf3723Ecc5B57AB11cC04639c9dEa', // Bridged USDT
-  '0xC26B690773828999c2612549CC815d1F252EA15e', // USDM Stablecoin
-  '0x3F48CB103C3172C24a9F6cF3be92d571bF7072af', // LARA
-  '0x39b1fC930C43606af5C353e90a55db10bCaF4087' // Bridged ETH
+  '0x69d411cbf6dbad54bfe36f81d0a39922625bc78c', // Bridged USDT
+  '0xc26b690773828999c2612549cc815d1f252ea15e', // USDM Stablecoin
+  '0xe6a69cd4ff127ad8e53c21a593f7bac4c608945e', // LARA
+  '0x39b1fc930c43606af5c353e90a55db10bcaf4087' // Bridged ETH
 ]
 
 let STABLE_COINS: string[] = [
-  '0x81d87E0a53EAf3723Ecc5B57AB11cC04639c9dEa', // Bridged USDT
-  '0xC26B690773828999c2612549CC815d1F252EA15e' // USDM Stablecoin
+  '0x69d411cbf6dbad54bfe36f81d0a39922625bc78c', // Bridged USDT
+  '0xc26b690773828999c2612549cc815d1f252ea15e' // USDM Stablecoin
 ]
 
-let MINIMUM_ETH_LOCKED = BigDecimal.fromString('60')
+let MINIMUM_ETH_LOCKED = BigDecimal.fromString('1000')
 
 let Q192 = BigInt.fromI32(2)
   .pow(192)
@@ -42,9 +42,9 @@ export function sqrtPriceX96ToTokenPrices(sqrtPriceX96: BigInt, token0: Token, t
 
 export function getEthPriceInUSD(): BigDecimal {
   // fetch eth prices for each stablecoin
-  let usdmPool = Pool.load(USDM_TARA_05_POOL) // USDM is token1
-  if (usdmPool !== null) {
-    return usdmPool.token1Price
+  let usdtPool = Pool.load(TARA_USDT_03_POOL) // USDT is token1
+  if (usdtPool !== null) {
+    return usdtPool.token1Price
   } else {
     return ZERO_BD
   }
