@@ -76,9 +76,9 @@ dataSources:
     name: UniV3StakerVested
     network: mainnet
     source:
-      address: '0x3611731bac2f6891dd222f6f47d9f6faf7d72e30'
+      address: '0xC7053cE28997b23541bfF8B4B555655c06db584D'
       abi: UniV3StakerVested
-      startBlock: 12243640
+      startBlock: 17966081
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
