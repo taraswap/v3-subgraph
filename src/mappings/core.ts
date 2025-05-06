@@ -1,7 +1,7 @@
 /* eslint-disable prefer-const */
 import { Bundle, Burn, Factory, Mint, Pool, Swap, Tick, Token } from '../types/schema'
 import { Pool as PoolABI } from '../types/Factory/Pool'
-import { BigDecimal, BigInt, ethereum } from '@graphprotocol/graph-ts'
+import { BigDecimal, BigInt, ethereum, log } from '@graphprotocol/graph-ts'
 import {
   Burn as BurnEvent,
   Flash as FlashEvent,
@@ -22,9 +22,37 @@ import {
 } from '../utils/intervalUpdates'
 import { createTick, feeTierToTickSpacing } from '../utils/tick'
 
+function updateTickFeeVarsAndSave(tick: Tick, event: ethereum.Event): void {
+  let poolAddress = event.address
+  // not all ticks are initialized so obtaining null is expected behavior
+  let poolContract = PoolABI.bind(poolAddress)
+  let tickResult = poolContract.ticks(tick.tickIdx.toI32())
+  tick.feeGrowthOutside0X128 = tickResult.value2
+  tick.feeGrowthOutside1X128 = tickResult.value3
+  tick.save()
+
+  updateTickDayData(tick, event)
+}
+
+function loadTickUpdateFeeVarsAndSave(tickId: number, event: ethereum.Event): void {
+  let poolAddress = event.address
+  let tick = Tick.load(
+    poolAddress
+      .toHexString()
+      .concat('#')
+      .concat(tickId.toString())
+  )
+  if (tick !== null) {
+    updateTickFeeVarsAndSave(tick!, event)
+  }
+}
+
 export function handleInitialize(event: Initialize): void {
   // update pool sqrt price and tick
   let pool = Pool.load(event.address.toHexString())
+  if (!pool) {
+    return
+  }
   pool.sqrtPrice = event.params.sqrtPriceX96
   pool.tick = BigInt.fromI32(event.params.tick)
   pool.save()
@@ -33,8 +61,15 @@ export function handleInitialize(event: Initialize): void {
   let token0 = Token.load(pool.token0)
   let token1 = Token.load(pool.token1)
 
+  if (token0 === null || token1 === null) {
+    return
+  }
+
   // update ETH price now that prices could have changed
   let bundle = Bundle.load('1')
+  if (bundle === null) {
+    return
+  }
   bundle.ethPriceUSD = getEthPriceInUSD()
   bundle.save()
 
@@ -50,12 +85,24 @@ export function handleInitialize(event: Initialize): void {
 
 export function handleMint(event: MintEvent): void {
   let bundle = Bundle.load('1')
+  if (bundle === null) {
+    return
+  }
   let poolAddress = event.address.toHexString()
   let pool = Pool.load(poolAddress)
+  if (pool === null) {
+    return
+  }
   let factory = Factory.load(FACTORY_ADDRESS)
+  if (factory === null) {
+    return
+  }
 
   let token0 = Token.load(pool.token0)
   let token1 = Token.load(pool.token1)
+  if (token0 === null || token1 === null) {
+    return
+  }
   let amount0 = convertTokenToDecimal(event.params.amount0, token0.decimals)
   let amount1 = convertTokenToDecimal(event.params.amount1, token1.decimals)
 
@@ -169,12 +216,24 @@ export function handleMint(event: MintEvent): void {
 
 export function handleBurn(event: BurnEvent): void {
   let bundle = Bundle.load('1')
+  if (bundle === null) {
+    return
+  }
   let poolAddress = event.address.toHexString()
   let pool = Pool.load(poolAddress)
+  if (pool === null) {
+    return
+  }
   let factory = Factory.load(FACTORY_ADDRESS)
+  if (factory === null) {
+    return
+  }
 
   let token0 = Token.load(pool.token0)
   let token1 = Token.load(pool.token1)
+  if (token0 === null || token1 === null) {
+    return
+  }
   let amount0 = convertTokenToDecimal(event.params.amount0, token0.decimals)
   let amount1 = convertTokenToDecimal(event.params.amount1, token1.decimals)
 
@@ -244,6 +303,9 @@ export function handleBurn(event: BurnEvent): void {
   let upperTickId = poolAddress + '#' + BigInt.fromI32(event.params.tickUpper).toString()
   let lowerTick = Tick.load(lowerTickId)
   let upperTick = Tick.load(upperTickId)
+  if (lowerTick === null || upperTick === null) {
+    return
+  }
   let amount = event.params.amount
   lowerTick.liquidityGross = lowerTick.liquidityGross.minus(amount)
   lowerTick.liquidityNet = lowerTick.liquidityNet.minus(amount)
@@ -269,8 +331,17 @@ export function handleBurn(event: BurnEvent): void {
 
 export function handleSwap(event: SwapEvent): void {
   let bundle = Bundle.load('1')
+  if (bundle === null) {
+    return
+  }
   let factory = Factory.load(FACTORY_ADDRESS)
+  if (factory === null) {
+    return
+  }
   let pool = Pool.load(event.address.toHexString())
+  if (pool === null) {
+    return
+  }
 
   // hot fix for bad pricing
   if (pool.id == '0x9663f2ca0454accad3e094448ea6f77443880454') {
@@ -279,6 +350,9 @@ export function handleSwap(event: SwapEvent): void {
 
   let token0 = Token.load(pool.token0)
   let token1 = Token.load(pool.token1)
+  if (token0 === null || token1 === null) {
+    return
+  }
 
   let oldTick = pool.tick!
 
@@ -333,7 +407,7 @@ export function handleSwap(event: SwapEvent): void {
 
   // Update the pool with the new active liquidity, price, and tick.
   pool.liquidity = event.params.liquidity
-  pool.tick = BigInt.fromI32(event.params.tick as i32)
+  pool.tick = BigInt.fromI32(event.params.tick)
   pool.sqrtPrice = event.params.sqrtPriceX96
   pool.totalValueLockedToken0 = pool.totalValueLockedToken0.plus(amount0)
   pool.totalValueLockedToken1 = pool.totalValueLockedToken1.plus(amount1)
@@ -394,7 +468,7 @@ export function handleSwap(event: SwapEvent): void {
   swap.amount0 = amount0
   swap.amount1 = amount1
   swap.amountUSD = amountTotalUSDTracked
-  swap.tick = BigInt.fromI32(event.params.tick as i32)
+  swap.tick = BigInt.fromI32(event.params.tick)
   swap.sqrtPriceX96 = event.params.sqrtPriceX96
   swap.logIndex = event.logIndex
 
@@ -498,35 +572,13 @@ export function handleSwap(event: SwapEvent): void {
 export function handleFlash(event: FlashEvent): void {
   // update fee growth
   let pool = Pool.load(event.address.toHexString())
+  if (pool === null) {
+    return
+  }
   let poolContract = PoolABI.bind(event.address)
   let feeGrowthGlobal0X128 = poolContract.feeGrowthGlobal0X128()
   let feeGrowthGlobal1X128 = poolContract.feeGrowthGlobal1X128()
   pool.feeGrowthGlobal0X128 = feeGrowthGlobal0X128 as BigInt
   pool.feeGrowthGlobal1X128 = feeGrowthGlobal1X128 as BigInt
   pool.save()
-}
-
-function updateTickFeeVarsAndSave(tick: Tick, event: ethereum.Event): void {
-  let poolAddress = event.address
-  // not all ticks are initialized so obtaining null is expected behavior
-  let poolContract = PoolABI.bind(poolAddress)
-  let tickResult = poolContract.ticks(tick.tickIdx.toI32())
-  tick.feeGrowthOutside0X128 = tickResult.value2
-  tick.feeGrowthOutside1X128 = tickResult.value3
-  tick.save()
-
-  updateTickDayData(tick!, event)
-}
-
-function loadTickUpdateFeeVarsAndSave(tickId: i32, event: ethereum.Event): void {
-  let poolAddress = event.address
-  let tick = Tick.load(
-    poolAddress
-      .toHexString()
-      .concat('#')
-      .concat(tickId.toString())
-  )
-  if (tick !== null) {
-    updateTickFeeVarsAndSave(tick!, event)
-  }
 }

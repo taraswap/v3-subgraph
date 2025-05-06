@@ -1,19 +1,19 @@
-specVersion: 0.0.2
+specVersion: 0.0.4
 description: Uniswap is a decentralized protocol for automated token exchange on Ethereum.
-repository: https://github.com/Uniswap/uniswap-v3-subgraph
+repository: https://github.com/taraswap/v3-subgraph
 schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum/contract
     name: Factory
-    network: testnet
+    network: mainnet
     source:
-      address: '0x33E5AF40C406e4d26440119E701324618919B7A4'
+      address: '0x5EFAc029721023DD6859AFc8300d536a2d6d4c82'
       abi: Factory
-      startBlock: 50000
+      startBlock: 10674828
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/factory.ts
       entities:
@@ -35,19 +35,25 @@ dataSources:
           handler: handlePoolCreated
   - kind: ethereum/contract
     name: NonfungiblePositionManager
-    network: testnet
+    network: mainnet
     source:
-      address: '0x39fa4A1d37D6e5d0BC3caA0D26357bd03563bDCd'
+      address: '0x1c5a295e9860d127d8a3e7af138bb945c4377ae7'
       abi: NonfungiblePositionManager
-      startBlock: 50000
+      startBlock: 10674878
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/position-manager.ts
       entities:
         - Pool
         - Token
+        - Approval
+        - ApprovalForAll
+        - Collect
+        - DecreaseLiquidity
+        - IncreaseLiquidity
+        - Transfer
       abis:
         - name: NonfungiblePositionManager
           file: ./abis/NonfungiblePositionManager.json
@@ -66,15 +72,56 @@ dataSources:
           handler: handleCollect
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
+  - kind: ethereum/contract
+    name: UniV3StakerVested
+    network: mainnet
+    source:
+      address: '0xC7053cE28997b23541bfF8B4B555655c06db584D'
+      abi: UniV3StakerVested
+      startBlock: 17966081
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Incentive
+        - OwnerStaker
+        - OwnerStakerReward
+        - IncentivePosition
+        - Position
+        - Stake
+        - Unstake
+        - Claim
+      abis:
+        - name: UniV3StakerVested
+          file: ./abis/UniV3StakerVested.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: NonfungiblePositionManager
+          file: ./abis/NonfungiblePositionManager.json
+      eventHandlers:
+        - event: IncentiveCreated(indexed address,indexed address,uint256,uint256,uint256,address,uint256)
+          handler: handleIncentiveCreated
+        - event: IncentiveEnded(indexed bytes32,uint256)
+          handler: handleIncentiveEnded
+        - event: DepositTransferred(indexed uint256,indexed address,indexed address)
+          handler: handleDepositTransferred
+        - event: TokenStaked(indexed uint256,indexed bytes32,uint128)
+          handler: handleTokenStaked
+        - event: TokenUnstaked(indexed uint256,indexed bytes32)
+          handler: handleTokenUnstaked
+        - event: RewardClaimed(indexed address,indexed address,uint256)
+          handler: handleRewardClaimed
+      file: ./src/mappings/uni-v3-staker-vested-mapping.ts
 templates:
   - kind: ethereum/contract
     name: Pool
-    network: testnet
+    network: mainnet
     source:
       abi: Pool
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.4
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       file: ./src/mappings/core.ts
       entities:
@@ -98,3 +145,21 @@ templates:
           handler: handleBurn
         - event: Flash(indexed address,indexed address,uint256,uint256,uint256,uint256)
           handler: handleFlash
+  - kind: ethereum/contract
+    name: ERC20
+    network: mainnet
+    source:
+      abi: ERC20
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Token
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/mappings/uni-v3-staker-vested-mapping.ts
